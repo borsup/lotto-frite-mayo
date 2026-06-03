@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🍟 Lotto-Frite-Mayo</title>
+  <meta name="description" content="Générateur de combinaisons Lotto belge basé sur l'analyse statistique des tirages 1978-2026. 100% belge, 100% frites.">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #050a18; --card: #0f172a; --border: rgba(255,255,255,0.05);
+      --gold: #d4a017; --red: #cc2929; --text: #e2e8f0;
+      --muted: #94a3b8; --dim: #64748b;
+    }
+    body { background:var(--bg); color:var(--text); font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; line-height:1.5; min-height:100vh; }
+    .app { max-width:720px; margin:0 auto; padding:20px 14px 48px; }
+
+    /* ── HEADER ── */
+    .header {
+      border-radius:16px; padding:20px 22px; margin-bottom:14px; position:relative; overflow:hidden;
+      background: linear-gradient(135deg, #0a0f1e 0%, #1a1040 40%, #1a0808 100%);
+      border: 1px solid rgba(212,160,23,0.25);
+    }
+    /* Belgian flag top stripe */
+    .header::before {
+      content:''; position:absolute; top:0; left:0; right:0; height:4px;
+      background: linear-gradient(90deg, #1a1a1a 33.3%, #d4a017 33.3% 66.6%, #cc2929 66.6%);
+    }
+    .header-row { display:flex; justify-content:space-between; align-items:center; gap:14px; flex-wrap:wrap; }
+    .app-title {
+      font-size:24px; font-weight:900; letter-spacing:-0.5px;
+      background: linear-gradient(135deg, #ffd700 0%, #d4a017 40%, #f5c518 70%, #fff7cc 100%);
+      -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+    }
+    .app-tag {
+      display:inline-block; font-size:10px; letter-spacing:1.5px; text-transform:uppercase;
+      font-weight:700; color:#cc2929; margin-bottom:3px;
+    }
+    .app-sub { font-size:12px; color:var(--muted); margin-top:3px; }
+    .app-sub span { color:var(--gold); font-weight:600; }
+    .app-motto {
+      margin-top:10px; font-size:11px; color:var(--dim); font-style:italic;
+      border-top:1px solid rgba(255,255,255,0.05); padding-top:10px;
+    }
+
+    /* ── BUTTONS ── */
+    button { cursor:pointer; font-family:inherit; border:none; transition:all .18s ease; }
+    button:disabled { cursor:wait; opacity:.6; }
+    button:not(:disabled):hover { filter:brightness(1.12); }
+    button:not(:disabled):active { transform:scale(.97); }
+    .btn-refresh { padding:10px 16px; background:rgba(212,160,23,.15); border:1px solid rgba(212,160,23,.4); border-radius:10px; color:var(--gold); font-size:13px; font-weight:600; display:flex; align-items:center; gap:8px; }
+    .btn-about { padding:6px 12px; background:rgba(204,41,41,.12); border:1px solid rgba(204,41,41,.3); border-radius:8px; color:#f87171; font-size:11px; font-weight:600; margin-top:10px; }
+
+    /* ── STATUS ── */
+    .status { margin-top:10px; padding:8px 12px; border-radius:8px; font-size:12px; font-weight:600; display:none; }
+    .status.ok  { background:rgba(16,185,129,.12); border:1px solid rgba(16,185,129,.3); color:#6ee7b7; display:block; }
+    .status.err { background:rgba(239,68,68,.12);  border:1px solid rgba(239,68,68,.3);  color:#fca5a5; display:block; }
+
+    /* ── SETTINGS ── */
+    .settings-toggle { background:none; color:var(--dim); font-size:11px; padding:4px 0; text-decoration:underline; text-underline-offset:3px; margin-top:10px; display:block; }
+    .panel { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:16px; margin-bottom:14px; display:none; }
+    .panel.open { display:block; animation:slideUp .25s ease-out; }
+    .panel label { font-size:12px; color:var(--muted); display:block; margin-bottom:6px; font-weight:600; }
+    .panel input { width:100%; background:#050a18; border:1px solid rgba(255,255,255,.1); border-radius:8px; padding:8px 12px; color:var(--text); font-size:13px; font-family:monospace; margin-bottom:8px; }
+    .panel p, .panel li { font-size:12px; color:var(--dim); line-height:1.7; }
+    .panel a { color:var(--gold); }
+    .panel ul { padding-left:16px; }
+
+    /* ── ABOUT ── */
+    .about-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:14px; }
+    .about-meta { font-size:13px; }
+    .about-meta strong { color:var(--text); }
+    .about-meta div { display:flex; justify-content:space-between; padding:5px 0; border-bottom:1px solid var(--border); }
+    .about-meta span:first-child { color:var(--dim); }
+    .about-meta span:last-child { color:var(--gold); font-weight:600; }
+    .mode-card { background:rgba(255,255,255,.03); border:1px solid var(--border); border-radius:8px; padding:10px 12px; }
+    .mode-card h4 { font-size:13px; font-weight:700; margin-bottom:5px; }
+    .mode-card p { font-size:11px; color:var(--dim); line-height:1.65; }
+
+    /* ── DATE ── */
+    .date-row { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:14px 18px; margin-bottom:14px; display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+    .date-row label { font-size:13px; color:var(--muted); font-weight:600; }
+    .date-row input { background:#1e293b; border:1px solid rgba(255,255,255,.1); border-radius:8px; padding:8px 12px; color:var(--text); font-size:14px; font-family:inherit; flex:1; min-width:150px; color-scheme:dark; }
+
+    /* ── SECTION LABEL ── */
+    .section-label { font-size:10px; color:var(--dim); letter-spacing:2px; text-transform:uppercase; font-weight:700; margin:18px 0 10px; }
+
+    /* ── STRATEGY CARDS ── */
+    .strategies { display:grid; grid-template-columns:repeat(auto-fit,minmax(125px,1fr)); gap:8px; margin-bottom:18px; }
+    .strat-card { background:var(--card); border:2px solid var(--border); border-radius:12px; padding:14px 10px; text-align:center; }
+    .strat-card .emoji { font-size:26px; line-height:1; margin-bottom:4px; }
+    .strat-card .sname { font-size:13px; font-weight:700; line-height:1.2; }
+    .strat-card .sshort { font-size:10px; color:var(--dim); margin-top:3px; }
+
+    /* ── MODE TOGGLE ── */
+    .mode-row { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:10px 14px; margin-bottom:14px; display:flex; align-items:center; gap:12px; }
+    .mode-row > span { font-size:12px; color:var(--muted); font-weight:600; }
+    .mode-toggle { display:flex; background:#050a18; border-radius:8px; padding:3px; flex:1; }
+    .mode-btn { flex:1; padding:8px 12px; background:transparent; color:var(--muted); border-radius:6px; font-size:12px; font-weight:700; }
+    .mode-btn.active { background:var(--gold); color:#050a18; }
+
+    /* ── GENERATE ── */
+    .btn-gen { width:100%; padding:18px; border-radius:14px; color:#fff; font-size:17px; font-weight:800; letter-spacing:.5px; margin-bottom:16px; }
+
+    /* ── OUTPUT ── */
+    .out-card { border:2px solid rgba(255,255,255,.1); border-radius:16px; padding:22px 18px; animation:slideUp .4s ease-out; }
+    .out-top { display:flex; justify-content:space-between; align-items:center; margin-bottom:18px; flex-wrap:wrap; gap:8px; }
+    .out-label { font-size:10px; color:var(--dim); letter-spacing:2px; text-transform:uppercase; font-weight:700; }
+    .out-strat { font-size:18px; font-weight:800; margin-top:2px; }
+    .out-badge { font-size:11px; color:var(--muted); background:rgba(255,255,255,.05); padding:5px 11px; border-radius:6px; font-weight:600; }
+    .balls-row { display:flex; justify-content:center; gap:10px; flex-wrap:wrap; padding:10px 0; margin-bottom:18px; }
+    .ball { width:58px; height:58px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:#fff; font-size:20px; font-weight:800; text-shadow:0 1px 3px rgba(0,0,0,.5); flex-shrink:0; }
+    .out-info { display:flex; justify-content:space-between; align-items:center; padding:12px 14px; background:rgba(255,255,255,.03); border-radius:10px; flex-wrap:wrap; gap:8px; margin-bottom:12px; }
+    .out-date { font-size:12px; color:var(--muted); }
+    .out-date span { color:var(--gold); font-weight:700; margin-left:6px; }
+    .out-desc { font-size:11px; color:var(--dim); font-style:italic; }
+    .out-note { font-size:11px; color:#475569; text-align:center; line-height:1.6; }
+    .placeholder { background:var(--card); border:1px dashed rgba(255,255,255,.1); border-radius:16px; padding:32px; text-align:center; color:var(--dim); font-size:13px; }
+
+    /* ── FOOTER ── */
+    .footer { text-align:center; color:#334155; font-size:10px; margin-top:28px; line-height:1.8; }
+    .footer a { color:var(--gold); text-decoration:none; }
+    .footer .made { color:var(--dim); font-size:11px; margin-bottom:4px; }
+
+    /* ── ANIMATIONS ── */
+    @keyframes ballAppear { from{opacity:0;transform:scale(.3) rotate(-30deg)} to{opacity:1;transform:scale(1) rotate(0)} }
+    @keyframes spin { to{transform:rotate(360deg)} }
+    @keyframes slideUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+    .spin { animation:spin 1s linear infinite; display:inline-block; }
+  </style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ══ HEADER ══ -->
+  <div class="header">
+    <div class="header-row">
+      <div>
+        <div class="app-tag">🇧🇪 Lotto Belge · stats 1978–2026</div>
+        <div class="app-title">🍟 Lotto-Frite-Mayo</div>
+        <div class="app-sub">Données au <span id="lastUpdate">30/05/2026</span></div>
+      </div>
+      <button class="btn-refresh" id="refreshBtn" onclick="handleRefresh()">
+        <span id="refreshIcon">⟳</span><span id="refreshLabel">Réactualiser</span>
+      </button>
+    </div>
+    <div class="app-motto">
+      "Les meilleures combinaisons… toujours meilleures avec de la mayo." 🤫
+    </div>
+    <div id="statusBar" class="status"></div>
+    <button class="settings-toggle" onclick="toggleSettings()">⚙️ Clé API Anthropic (pour la réactualisation)</button>
+  </div>
+
+  <!-- ══ SETTINGS PANEL ══ -->
+  <div class="panel" id="settingsPanel">
+    <label for="apiKey">Clé API Anthropic (sk-ant-...)</label>
+    <input type="password" id="apiKey" placeholder="sk-ant-api03-..." oninput="saveKey(this.value)">
+    <p>
+      Génère ta clé sur <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a>.
+      Elle est sauvegardée uniquement dans ton navigateur. Sans clé, le générateur fonctionne parfaitement
+      avec les stats intégrées (mai 2026).
+    </p>
+  </div>
+
+  <!-- ══ DATE ══ -->
+  <div class="date-row">
+    <label for="drawDate">📅 Date du tirage :</label>
+    <input type="date" id="drawDate">
+  </div>
+
+  <!-- ══ STRATEGIES ══ -->
+  <div class="section-label">Choisis ta stratégie</div>
+  <div class="strategies" id="stratGrid"></div>
+
+  <!-- ══ MODE TOGGLE ══ -->
+  <div class="mode-row">
+    <span>Mode :</span>
+    <div class="mode-toggle">
+      <button class="mode-btn active" id="modeFixed"  onclick="setMode('fixed')">📌 Combinaison fixe</button>
+      <button class="mode-btn"        id="modeRandom" onclick="setMode('random')">🎲 Variation aléatoire</button>
+    </div>
+  </div>
+
+  <!-- ══ GENERATE ══ -->
+  <button class="btn-gen" id="genBtn" onclick="handleGenerate()">✨ Générer ma grille ✨</button>
+
+  <!-- ══ OUTPUT ══ -->
+  <div id="output">
+    <div class="placeholder">👆 Sélectionne une stratégie et clique sur Générer</div>
+  </div>
+
+  <!-- ══ ABOUT ══ -->
+  <div style="margin-top:28px">
+    <button class="btn-about" onclick="toggleAbout()">ℹ️ À propos de Lotto-Frite-Mayo</button>
+  </div>
+  <div class="panel" id="aboutPanel" style="margin-top:10px">
+    <!-- Meta -->
+    <div class="about-grid">
+      <div class="about-meta">
+        <strong>🍟 Lotto-Frite-Mayo</strong>
+        <div style="margin-top:8px">
+          <div><span>Développeur</span><span>borsup 🇧🇪</span></div>
+          <div><span>Version</span><span>1.0</span></div>
+          <div><span>Date</span><span>Juin 2026</span></div>
+          <div><span>Tirages analysés</span><span>~5 000</span></div>
+          <div><span>Période</span><span>1978 → 2026</span></div>
+        </div>
+      </div>
+      <div style="font-size:12px;color:var(--dim);line-height:1.75;padding-top:22px">
+        Application de génération de combinaisons basée sur l'analyse statistique des tirages du Lotto belge 6/45 depuis 1978. Aucune garantie de gain — joue responsable.
+      </div>
+    </div>
+
+    <!-- Mode explanations -->
+    <label style="margin-bottom:10px">📊 Les deux modes expliqués</label>
+    <div class="about-grid">
+      <div class="mode-card">
+        <h4 style="color:#d4a017">📌 Mode Fixe</h4>
+        <p>Chaque stratégie propose une combinaison "officielle" calculée sur l'ensemble des données historiques. Elle ne change pas d'un clic à l'autre — c'est la combinaison théoriquement optimale pour cette approche. Idéal pour jouer une grille réfléchie et cohérente.</p>
+      </div>
+      <div class="mode-card">
+        <h4 style="color:#d4a017">🎲 Mode Aléatoire</h4>
+        <p>À chaque clic, l'outil pioche dans le pool de la stratégie. Exemple : "Les Chauds" tire 6 numéros au hasard parmi les 10 plus fréquents. Idéal pour varier les grilles tout en restant dans la logique statistique.</p>
+      </div>
+    </div>
+    <div class="mode-card" style="margin-top:10px">
+      <h4 style="color:#d4a017">⟳ Réactualisation live</h4>
+      <p>Le bouton "Réactualiser" interroge LotteryExtreme.com en temps réel via l'API Anthropic pour mettre à jour les fréquences avec les derniers tirages. Nécessite une clé API Anthropic (gratuite). Sans clé, les stats intégrées restent valides et parfaitement utilisables.</p>
+    </div>
+
+    <p style="margin-top:14px;font-size:11px;color:var(--dim);line-height:1.7">
+      ⚠️ Le Lotto est un jeu de hasard. Aucune stratégie ne modifie la probabilité mathématique de 1 sur 8 145 060. 
+      Cette application est un outil d'aide à la sélection basé sur des données historiques, pas une garantie de gain.
+    </p>
+  </div>
+
+  <!-- ══ FOOTER ══ -->
+  <div class="footer">
+    <div class="made">🍟 Lotto-Frite-Mayo v1.0 · Juin 2026 · développé par borsup 🇧🇪</div>
+    Joue responsable — Aide : <a href="tel:0800357777">0800 35 777</a> (gratuit, anonyme)<br>
+    Stats : <a href="https://www.lotteryextreme.com/belgium/lotto-statistics" target="_blank">LotteryExtreme.com</a>
+  </div>
+</div>
+
+<script>
+// ── DATA ──────────────────────────────────────────────────────
+const FREQ0 = {
+  1:589,2:596,3:615,4:596,5:583,6:564,7:634,8:569,9:596,10:596,
+  11:569,12:614,13:584,14:608,15:543,16:651,17:590,18:588,19:609,20:578,
+  21:568,22:616,23:575,24:626,25:608,26:559,27:600,28:630,29:589,30:525,
+  31:568,32:558,33:602,34:560,35:590,36:604,37:545,38:636,39:557,40:566,
+  41:545,42:565,43:224,44:218,45:195
+};
+const OVERDUE = [18,37,31,41,33,15,27,28];
+const TRIPLET = [12,28,36];
+const STRATS  = {
+  chauds:    {name:"Les Chauds",     emoji:"🔥",color:"#ef4444",short:"Top historiques", fixed:[7,16,22,24,28,38],desc:"Les 6 numéros les plus sortis depuis 1978 (parmi 1-42)."},
+  equilibre: {name:"L'Équilibre",    emoji:"⚖️",color:"#8b5cf6",short:"Chauds + retards",fixed:[16,18,24,31,37,38],desc:"3 chauds + 3 grands retards (n°18: 206j, n°37: 139j, n°31: 125j)."},
+  paires:    {name:"Paires d'Or",    emoji:"💎",color:"#f59e0b",short:"Triplet phare",   fixed:[7,12,24,28,36,38],desc:"Triplet le plus fréquent (12-28-36, sorti 20×) + chauds."},
+  antisplit: {name:"Anti-Splitting", emoji:"🧠",color:"#10b981",short:"Évite les dates", fixed:[33,36,37,38,40,42],desc:"Numéros >31 — évite les dates jouées par la majorité."},
+  mixte:     {name:"Mixte Optimisé", emoji:"🎯",color:"#3b82f6",short:"Multi-critères",  fixed:[7,16,22,28,36,37],desc:"4 chauds + 1 grand retard + 1 numéro du triplet phare."}
+};
+
+// ── STATE ─────────────────────────────────────────────────────
+let freq = {...FREQ0}, lastUpdateISO='2026-05-30', curStrat='equilibre', curMode='fixed';
+
+try { const s=localStorage.getItem('lfm_stats'); if(s){const p=JSON.parse(s);if(p.freq&&Object.keys(p.freq).length>=40){freq=p.freq;lastUpdateISO=p.date||lastUpdateISO;}} } catch(e){}
+const savedKey=localStorage.getItem('lfm_key')||'';
+if(savedKey) document.getElementById('apiKey').value=savedKey;
+
+// ── HELPERS ───────────────────────────────────────────────────
+const shuffle = a => { const b=[...a]; for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]];} return b; };
+
+function nextDraw() {
+  const t=new Date(),d=t.getDay(),n=new Date(t);
+  if(d===3||d===6) return t.toISOString().split('T')[0];
+  if(d<3) n.setDate(t.getDate()+(3-d));
+  else if(d<6) n.setDate(t.getDate()+(6-d));
+  else n.setDate(t.getDate()+3);
+  return n.toISOString().split('T')[0];
+}
+
+function toFR(iso){ if(!iso)return''; const[y,m,d]=iso.split('-'); return`${d}/${m}/${y}`; }
+
+function ballColor(num){
+  const f=freq[num]||0;
+  if(num>=43) return{bg:'#6b7280',glow:'rgba(107,114,128,.5)'};
+  if(f>=625)  return{bg:'#ef4444',glow:'rgba(239,68,68,.5)'};
+  if(f>=600)  return{bg:'#f97316',glow:'rgba(249,115,22,.5)'};
+  if(f>=575)  return{bg:'#eab308',glow:'rgba(234,179,8,.5)'};
+  if(f>=550)  return{bg:'#84cc16',glow:'rgba(132,204,22,.5)'};
+  return{bg:'#3b82f6',glow:'rgba(59,130,246,.5)'};
+}
+
+function genRandom(id){
+  const hot=Object.entries(freq).filter(([n])=>+n<=42).sort((a,b)=>b[1]-a[1]).slice(0,10).map(([n])=>+n);
+  if(id==='chauds')    return shuffle(hot).slice(0,6).sort((a,b)=>a-b);
+  if(id==='equilibre') { const h=shuffle(hot.slice(0,8)).slice(0,3);const o=shuffle(OVERDUE.filter(n=>!h.includes(n))).slice(0,3);return[...h,...o].sort((a,b)=>a-b); }
+  if(id==='paires')    { const f2=hot.filter(n=>!TRIPLET.includes(n));return[...TRIPLET,...shuffle(f2).slice(0,3)].sort((a,b)=>a-b); }
+  if(id==='antisplit') return shuffle([32,33,34,35,36,37,38,39,40,41,42]).slice(0,6).sort((a,b)=>a-b);
+  if(id==='mixte')     { const h=shuffle(hot.slice(0,8)).slice(0,4);const o=shuffle(OVERDUE.filter(n=>!h.includes(n))).slice(0,1);let t=shuffle(TRIPLET.filter(n=>![...h,...o].includes(n))).slice(0,1);if(!t.length)t=shuffle(hot.filter(n=>![...h,...o].includes(n))).slice(0,1);return[...h,...o,...t].sort((a,b)=>a-b); }
+  return[];
+}
+
+// ── INIT ──────────────────────────────────────────────────────
+document.getElementById('drawDate').value=nextDraw();
+document.getElementById('lastUpdate').textContent=toFR(lastUpdateISO);
+
+const grid=document.getElementById('stratGrid');
+Object.entries(STRATS).forEach(([id,s])=>{
+  const btn=document.createElement('button');
+  btn.className='strat-card'; btn.id=`sc-${id}`;
+  btn.innerHTML=`<div class="emoji">${s.emoji}</div><div class="sname">${s.name}</div><div class="sshort">${s.short}</div>`;
+  btn.onclick=()=>selectStrat(id);
+  grid.appendChild(btn);
+});
+selectStrat(curStrat);
+
+// ── STRAT SELECT ──────────────────────────────────────────────
+function selectStrat(id){
+  curStrat=id; const s=STRATS[id];
+  document.querySelectorAll('.strat-card').forEach(c=>{
+    c.style.background='#0f172a'; c.style.borderColor='rgba(255,255,255,.05)';
+    c.querySelector('.sname').style.color='#e2e8f0';
+  });
+  const card=document.getElementById(`sc-${id}`);
+  card.style.background=`${s.color}1f`; card.style.borderColor=s.color;
+  card.querySelector('.sname').style.color=s.color;
+  const btn=document.getElementById('genBtn');
+  btn.style.background=`linear-gradient(135deg,${s.color},${s.color}cc)`;
+  btn.style.boxShadow=`0 8px 24px ${s.color}40,inset 0 1px 0 rgba(255,255,255,.2)`;
+}
+
+function setMode(m){ curMode=m; document.getElementById('modeFixed').classList.toggle('active',m==='fixed'); document.getElementById('modeRandom').classList.toggle('active',m==='random'); }
+function toggleSettings(){ document.getElementById('settingsPanel').classList.toggle('open'); }
+function toggleAbout(){ document.getElementById('aboutPanel').classList.toggle('open'); }
+function saveKey(v){ try{localStorage.setItem('lfm_key',v);}catch(e){} }
+
+// ── GENERATE ─────────────────────────────────────────────────
+function handleGenerate(){
+  const s=STRATS[curStrat];
+  const nums=curMode==='fixed'?s.fixed:genRandom(curStrat);
+  const date=document.getElementById('drawDate').value;
+  const balls=nums.map((n,i)=>{
+    const{bg,glow}=ballColor(n);
+    return`<div class="ball" style="background:radial-gradient(circle at 32% 32%,rgba(255,255,255,.45) 0%,${bg} 65%);box-shadow:0 6px 18px ${glow},inset 0 1px 0 rgba(255,255,255,.35);animation:ballAppear .6s cubic-bezier(.34,1.56,.64,1) ${i*.08}s both">${n<10?'0'+n:n}</div>`;
+  }).join('');
+  document.getElementById('output').innerHTML=`
+    <div class="out-card" style="border-color:${s.color}66;background:linear-gradient(135deg,#0f172a,#1a1040);box-shadow:0 12px 40px ${s.color}22">
+      <div class="out-top">
+        <div><div class="out-label">Ta grille</div><div class="out-strat" style="color:${s.color}">${s.emoji} ${s.name}</div></div>
+        <div class="out-badge">${curMode==='fixed'?'📌 Fixe':'🎲 Aléatoire'}</div>
+      </div>
+      <div class="balls-row">${balls}</div>
+      <div class="out-info">
+        <div class="out-date">Tirage du <span>${toFR(date)}</span></div>
+        <div class="out-desc">${s.desc}</div>
+      </div>
+      <div class="out-note">🍟 Bonne chance ! Probabilité = 1 sur 8 145 060 quelle que soit la combinaison.</div>
+    </div>`;
+}
+
+// ── REFRESH ───────────────────────────────────────────────────
+async function handleRefresh(){
+  const key=document.getElementById('apiKey').value.trim();
+  if(!key){document.getElementById('settingsPanel').classList.add('open');showStatus('⚠️ Saisis ta clé API dans les paramètres ci-dessus.','err');return;}
+  const btn=document.getElementById('refreshBtn'),icon=document.getElementById('refreshIcon'),lbl=document.getElementById('refreshLabel');
+  btn.disabled=true; icon.classList.add('spin'); lbl.textContent='Actualisation...'; clearStatus();
+  try {
+    const res=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-20250514',max_tokens:2000,
+        messages:[{role:'user',content:'Récupère depuis https://www.lotteryextreme.com/belgium/lotto-statistics(1) la fréquence totale de chaque numéro du Lotto belge 6/45 (table "Number Frequency Table" depuis 04/02/1978). Renvoie EXCLUSIVEMENT du JSON valide, rien d\'autre : {"freq":{"1":XXX,...,"45":XXX},"date":"YYYY-MM-DD"}'}],
+        tools:[{type:'web_search_20250305',name:'web_search'}]
+      })
+    });
+    if(!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data=await res.json();
+    const text=data.content.filter(b=>b.type==='text').map(b=>b.text).join('\n');
+    const m=text.match(/\{[\s\S]*"freq"[\s\S]*\}/);
+    if(!m) throw new Error('JSON non trouvé');
+    const p=JSON.parse(m[0]);
+    if(!p.freq||Object.keys(p.freq).length<40) throw new Error('Données incomplètes');
+    for(let i=1;i<=45;i++) freq[i]=p.freq[i+'']||p.freq[i]||freq[i];
+    lastUpdateISO=p.date||new Date().toISOString().split('T')[0];
+    document.getElementById('lastUpdate').textContent=toFR(lastUpdateISO);
+    try{localStorage.setItem('lfm_stats',JSON.stringify({freq,date:lastUpdateISO}));}catch(e){}
+    showStatus(`✓ Stats mises à jour (${toFR(lastUpdateISO)})`,'ok');
+  } catch(e) {
+    showStatus(`✗ Échec : ${e.message}`,'err');
+  } finally {
+    btn.disabled=false; icon.classList.remove('spin'); lbl.textContent='Réactualiser';
+  }
+}
+
+function showStatus(msg,type){ const b=document.getElementById('statusBar');b.textContent=msg;b.className=`status ${type}`;setTimeout(()=>{b.className='status';},6000); }
+function clearStatus(){ document.getElementById('statusBar').className='status'; }
+</script>
+</body>
+</html>
