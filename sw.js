@@ -1,7 +1,7 @@
 // 🍟 Lotto-Frite-Mayo — Service Worker
 // Permet l'installation PWA et le fonctionnement hors-ligne
 
-const CACHE_NAME = 'lotto-frite-mayo-v1';
+const CACHE_NAME = 'lotto-frite-mayo-v2';
 const FILES = [
   './index.html',
   './stats.json',
