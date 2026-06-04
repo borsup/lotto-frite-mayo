@@ -16,7 +16,7 @@ Générateur de combinaisons Lotto belge basé sur l'analyse statistique des tir
 
 ## ✨ Fonctionnalités
 
-- **5 stratégies** : Les Chauds, L'Équilibre, Paires d'Or, Anti-Splitting, Mixte Optimisé
+- **6 stratégies** : Les Chauds, Les Froids, L'Équilibre, Paires d'Or, Anti-Splitting, Mixte Optimisé
 - **2 modes** : combinaison fixe ou variation aléatoire dans le pool de la stratégie
 - **Sélecteur de date** pour le tirage mercredi ou samedi
 - **Réactualisation automatique** des statistiques via GitHub Actions (gratuit, chaque lundi)
@@ -24,12 +24,13 @@ Générateur de combinaisons Lotto belge basé sur l'analyse statistique des tir
 
 ---
 
-## 📊 Les 5 stratégies
+## 📊 Les 6 stratégies
 
 | Stratégie | Logique |
 |-----------|---------|
 | 🔥 **Les Chauds** | Top 6 numéros les plus tirés depuis 1978 |
-| ⚖️ **L'Équilibre** | 3 chauds + 3 numéros très en retard |
+| ❄️ **Les Froids** | Top 6 numéros les moins fréquents depuis 1978 |
+| ⚖️ **L'Équilibre** | 3 chauds + 3 froids |
 | 💎 **Paires d'Or** | Basé sur le triplet 12-28-36 (sorti 20× ensemble) |
 | 🧠 **Anti-Splitting** | Numéros >31 pour réduire le partage du jackpot |
 | 🎯 **Mixte Optimisé** | Synthèse multi-critères équilibrée |
