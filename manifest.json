@@ -1,6 +1,6 @@
 {
   "name": "Lotto-Frite-Mayo",
-  "short_name": "LFM 🍟",
+  "short_name": "LottoFrite",
   "description": "Générateur de combinaisons Lotto belge basé sur l'analyse statistique. 100% belge, 100% gratuit.",
   "start_url": "./index.html",
   "display": "standalone",
