@@ -29,7 +29,7 @@ Générateur de combinaisons Lotto belge basé sur l'analyse statistique des tir
 | Stratégie | Logique |
 |-----------|---------|
 | 🔥 **Les Chauds** | Top 6 numéros les plus tirés depuis 1978 |
-| ❄️ **Les Froids** | Top 6 numéros les moins fréquents depuis 1978 |
+| ❄️ **Les Froids** | Top 6 numéros absents depuis le plus longtemps |
 | ⚖️ **L'Équilibre** | 3 chauds + 3 froids |
 | 💎 **Paires d'Or** | Basé sur le triplet 12-28-36 (sorti 20× ensemble) |
 | 🧠 **Anti-Splitting** | Numéros >31 pour réduire le partage du jackpot |
